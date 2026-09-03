@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:17-alpine
     ports:
-      - "5433:5432"
+      - '5432:5432'
     env_file:
       - .env
     volumes:
@@ -13,18 +13,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  web:
-    build: .
-    ports:
-      - "8000:8000"
-      - "80:80"
-    env_file:
-      - .env
-    depends_on:
-      - postgres
-    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-    restart: always
-
 
 
 volumes:
