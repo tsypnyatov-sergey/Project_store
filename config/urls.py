@@ -7,17 +7,17 @@ from config import settings
 APPS_URLS =[
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('api/orders/', include('orders.urls')),
-    path('api/products/', include('products.urls')),
-    path('api/reviews/', include('reviews.urls')),
+    path('orders/', include('orders.urls')),
+    path('products/', include('products.urls')),
+    path('reviews/', include('reviews.urls')),
     path('shop/', include('shop.urls')),
 
 ]
 
-MEDIA_URLS = (
-        static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-        + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-)
+MEDIA_URLS = [
+        #*static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+        *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
 
 urlpatterns = APPS_URLS
 
