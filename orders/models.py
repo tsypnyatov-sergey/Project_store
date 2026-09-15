@@ -18,7 +18,7 @@ class Order(models.Model):
                               default=OrderStatus.PENDING)
     payment_method = models.CharField(max_length=100)
     shipping_address = models.CharField(max_length=255)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2,
+    total_price = models.DecimalField(null=True,max_digits=10, decimal_places=2,
                                       validators=[MinValueValidator(0.0)])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -29,10 +29,17 @@ class Order(models.Model):
     def get_absolute_url(self):
         return f'/orders/{self.id}/'
 
+
+
     def save(self, *args, **kwargs):
-        self.total_price = self.items.values('price').aggregate(
-            total_price_sum=models.Sum('price'))['total_price_sum'] or 0
         super().save(*args, **kwargs)
+        self.total_price = self.get_total_price()
+        super().save(*args, **kwargs)
+
+    def get_total_price(self):
+        return sum([item.price * item.quantity for item in self.items.all()])
+
+
 
     class Meta:
         verbose_name_plural = 'Orders'

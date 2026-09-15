@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:17-alpine
     ports:
-      - '5432:5432'
+      - '5433:5432'
     env_file:
       - .env
     volumes:
@@ -17,3 +17,4 @@ services:
 
 volumes:
   pgdata:
+

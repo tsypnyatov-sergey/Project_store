@@ -13,6 +13,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+load_dotenv('.env.local')
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,17 +30,25 @@ DEBUG = os.getenv("DEBUG", default="False").lower() in ("true", "1")
 
 ALLOWED_HOSTS = []
 
-
-# Application definition
-
-INSTALLED_APPS = [
+SYSTEM_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
 ]
+# Application definition
+PROJECT_APPS = [
+    'orders',
+    'reviews',
+    'products',
+    'api'
+]
+ADDITIONAL_APPS = []
+
+INSTALLED_APPS = SYSTEM_APPS + PROJECT_APPS+ADDITIONAL_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -80,7 +90,7 @@ DATABASES = {
         'USER': os.getenv('POSTGRES_USER'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
         'HOST': os.getenv('POSTGRES_HOST'),
-        'PORT': '5432',
+        'PORT': os.getenv('POSTGRES_PORT'),
     }
 }
 
