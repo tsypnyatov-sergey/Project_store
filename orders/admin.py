@@ -20,7 +20,7 @@ class OrderAdmin(admin.ModelAdmin):
 
     @action(description = 'Cancel selected orders')
     def cancel_orders(self, request, queryset):
-        queryset.update(status=OrderStatus.CANCELED)
+        queryset.update(status=OrderStatus.CANCELLED)
 
     def has_delete_permission(self, request, obj = ...):
         if request.user.is_superuser:

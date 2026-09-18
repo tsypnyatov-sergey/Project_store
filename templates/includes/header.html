@@ -2,14 +2,14 @@
 
 <header>
     <div class="header-container">
-        <a href="#" class="header__logo">
+        <a href="{% url 'product_list_main' %}" class="header__logo">
             <img src="{% static 'img/logo.svg' %}" alt="Hop & Barley Logo">
             <p class="logo-text">Log Max Russia</p>
         </a>
         <nav class="header__nav">
             <ul>
-                <li><a href="#">Products</a></li>
-                <li><a href="#">Guides & Recipes</a></li>
+                <li><a href="{% url 'products:product_list' %}">Products</a></li>
+                <li><a href="{% url 'products:guides-recipes' %}">Guides & Recipes</a></li>
                 <li><a href="#">Community</a></li>
                 <li><a href="#">Resources</a></li>
                 <li><a href="#">Contact</a></li>

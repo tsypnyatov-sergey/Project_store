@@ -21,7 +21,7 @@ class Category(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
-        super().save()
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Category'
@@ -49,7 +49,7 @@ class Product(models.Model):
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
-        super().save()
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Product'
