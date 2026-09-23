@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}
+{{ product.name }} | Log Max
+{% endblock %}
+
+
+{% block content %}
+
+<main class="page-product">
+    <div class="container">
+        <!-- ============================= -->
+        <!-- PRODUCT INFO -->
+        <!-- ============================= -->
+        <section class="product-details-section">
+
+            <!-- Product image -->
+            <div class="product-image-container">
+                {% if product.image %}
+                <img
+                        src="{{ product.image.url }}"
+                        alt="{{ product.name }}"
+                        class="product-image"
+                >
+                {% endif %}
+            </div>
+
+            <!-- Product information -->
+            <div class="product-info-column">
+                <div class="product-title-price">
+                    <h1 class="product-name">
+                        {{ product.name }}
+                    </h1>
+
+                    <!-- Product rating -->
+                    <div class="product-rating">
+                        <div class="rating-stars">
+                            <!-- Полные звёзды -->
+                            {% for i in full_stars %}
+                            <i class="fa-solid fa-star"></i>
+                            {% endfor %}
+
+                            <!-- Половина звезды -->
+                            {% if has_half_star %}
+                            <i class="fa-solid fa-star-half-stroke"></i>
+                            {% endif %}
+
+                            <!-- Пустые звёзды -->
+                            {% for i in empty_stars %}
+                            <i class="fa-regular fa-star"></i>
+                            {% endfor %}
+                        </div>
+
+                        {% if average_rating %}
+                        <span class="average-rating">
+                            {{ average_rating|floatformat:1 }} / 5
+                        </span>
+                        <span class="reviews-count">
+                            ({{ reviews_count }} reviews)
+                        </span>
+                        {% else %}
+                        <span class="no-rating">
+                            No reviews yet
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Price -->
+                    <div class="price-section">
+                        <span class="price-tag">
+                            per 100g
+                        </span>
+                        <p class="product-price">
+                            ${{ product.price }}
+                        </p>
+                    </div>
+                </div>
+                <!-- Description -->
+                <div class="product-description">
+                    {{ product.description }}
+                </div>
+                <!-- Cart controls -->
+                <div class="cart-controls">
+                    <!-- Add to cart -->
+                    <button
+                            class="button button--primary add-to-cart-button"
+                            id="add-to-cart-btn"
+                    >
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        <span>
+                            Add to Cart
+                        </span>
+                    </button>
+                    <!-- Quantity -->
+                    <div
+                            class="quantity-counter is-hidden"
+                            id="quantity-counter"
+                    >
+                        <button
+                                class="quantity-btn"
+                                data-action="decrease"
+                                aria-label="Decrease quantity"
+                        >
+                            <i class="fa-solid fa-minus"></i>
+                        </button>
+                        <span class="quantity-value">
+                            1 in cart
+                        </span>
+                        <button
+                                class="quantity-btn"
+                                data-action="increase"
+                                aria-label="Increase quantity"
+                        >
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ============================= -->
+        <!-- TECHNICAL SPECIFICATIONS -->
+        <!-- ============================= -->
+
+        <section class="accordion-section">
+            <div class="accordion-item">
+                <div class="accordion-title">
+                    <h3>
+                        Technical Specifications
+                    </h3>
+                    <i
+                            class="fa-solid fa-chevron-down accordion-icon"
+                    ></i>
+                </div>
+
+                <div class="accordion-content">
+
+                    <ul>
+                        <li>
+                            <strong>Origin:</strong>
+                            USA
+                        </li>
+                        <li>
+                            <strong>Type:</strong>
+                            Aroma (Dual-Purpose)
+                        </li>
+                        <li>
+                            <strong>Alpha Acids:</strong>
+                            11.0% - 13.0%
+                        </li>
+                        <li>
+                            <strong>Beta Acids:</strong>
+                            3.0% - 4.5%
+                        </li>
+                        <li>
+                            <strong>Aroma Profile:</strong>
+                            Grapefruit, Lime, Passion Fruit, Lychee, Melon
+                        </li>
+                        <li>
+                            <strong>Usage:</strong>
+                            Late Kettle Addition, Dry Hopping
+                        </li>
+                        <li>
+                            <strong>Recommended Beer Styles:</strong>
+                            IPA, Double IPA, Pale Ale, American Wheat
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ============================= -->
+        <!-- REVIEWS -->
+        <!-- ============================= -->
+
+        <section class="reviews-section">
+            <h2 class="reviews-title">
+                Latest reviews
+            </h2>
+            <div class="reviews-grid">
+
+                {% for review in product.reviews.all %}
+                <!-- ============================= -->
+                <!-- REVIEW CARD -->
+                <!-- ============================= -->
+                <div class="review-card">
+                    <!-- Rating -->
+                    <div class="review-rating">
+                        {% for i in review.stars %}
+                        <i class="fa-solid fa-star"></i>
+                        {% endfor %}
+                        {% for i in review.empty_stars %}
+                        <i class="fa-regular fa-star"></i>
+                        {% endfor %}
+                    </div>
+                    <!-- Review content -->
+                    <div class="review-body">
+                        {% if review.heading %}
+                        <h4 class="review-heading">
+                            {{ review.heading }}
+                        </h4>
+                        {% endif %}
+                        {% if review.comment %}
+                        <p class="review-text">
+                            {{ review.comment }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Author -->
+                    <div class="review-author">
+                        <img
+                                src="{% static 'img/avatars/avatar2.svg' %}"
+                                alt="User avatar"
+                                class="author-avatar"
+                        >
+                        <span class="author-name">
+                            {{ review.owner.username }}
+                        </span>
+                    </div>
+                </div>
+                {% empty %}
+                <!-- No reviews -->
+                <div class="no-reviews">
+                    <p>
+                        There are no reviews yet.
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock %}

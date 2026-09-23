@@ -1,6 +1,6 @@
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import PROTECT
+from django.db.models import Avg
 from django.template.defaultfilters import slugify
 
 
@@ -42,8 +42,26 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def get_rating(self):
+        if self.reviews.count() > 0:
+            return self.reviews.aggregate(average=Avg('rating'))['average']
+        else:
+            return None
+
+    def get_stars(self):
+        rating = self.get_rating()
+        if rating is None:
+            return 0, False, 5
+
+        rating = float(rating)
+        full_stars = int(rating)
+        has_half_star = (rating - full_stars) >= 0.5
+        empty_stars = 5 - full_stars - int(has_half_star)
+        return full_stars, has_half_star, empty_stars
+
     def __str__(self):
         return self.name
+
     def get_absolute_url(self):
         return f'/products/{self.slug}'
 
@@ -55,9 +73,3 @@ class Product(models.Model):
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
         ordering = ['-created_at']
-
-
-
-
-
-
