@@ -34,6 +34,7 @@ class Product(models.Model):
     description = models.TextField()
     price = models.DecimalField(decimal_places=2, max_digits=10,
                                 validators=[MinValueValidator(0.0)])
+    specifications = models.JSONField(default=dict, blank=True, null=True) # сделать логику заполнения специифкации с конкретными полями, заполняемыми в админке
     category = models.ForeignKey(Category, on_delete=models.PROTECT,
                                  related_name='products')
     image = models.ImageField(upload_to='products/', null=True, blank=True)

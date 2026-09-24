@@ -71,7 +71,7 @@
                         <div class="product-card__info">
                             <h4 class="product-card__name">{{ product.name}}</h4>
                             <p class="product-card__price">${{ product.price }}</p>
-                            <p class="product-card__description">{{ product.description }}</p>
+                            <p class="product-card__description">{{ product.description | truncatewords:15 }}</p>
                         </div>
                     </div>
                 </a>
@@ -80,23 +80,7 @@
 
             </div>
 
-            <div class="pagination">
-                <a href="#" class="pagination__link pagination__link--prev">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    <span>Previous</span>
-                </a>
-                <div class="pagination-list">
-                    <a href="#" class="pagination__link active">1</a>
-                    <a href="#" class="pagination__link">2</a>
-                    <a href="#" class="pagination__link">3</a>
-                    <span class="pagination__dots">...</span>
-                    <a href="#" class="pagination__link">20</a>
-                </div>
-                <a href="#" class="pagination__link pagination__link--next">
-                    <span>Next</span>
-                    <i class="fa-solid fa-arrow-right"></i>
-                </a>
-            </div>
+            {% include 'includes/pagination.html' %}
         </section>
     </div>
 

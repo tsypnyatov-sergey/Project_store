@@ -11,6 +11,7 @@ class ProductList(ListView):
     model = Product
     context_object_name = 'products'
     template_name = 'products/product_list.html'
+    paginate_by = 6
 
 class GuidesReceiptView(TemplateView):
     template_name = 'products/guides-recipes.html'
@@ -19,7 +20,12 @@ class GuidesReceiptView(TemplateView):
 class ProductDetailsView(DetailView):
     template_name = 'products/product_detail.html'
     model = Product
-    queryset = Product.objects.select_related('category').prefetch_related('reviews__owner')
+    queryset = (Product.objects
+                .select_related('category')
+                .prefetch_related('reviews__owner'))
+
+
+
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

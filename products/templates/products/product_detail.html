@@ -139,34 +139,13 @@
                 <div class="accordion-content">
 
                     <ul>
-                        <li>
-                            <strong>Origin:</strong>
-                            USA
-                        </li>
-                        <li>
-                            <strong>Type:</strong>
-                            Aroma (Dual-Purpose)
-                        </li>
-                        <li>
-                            <strong>Alpha Acids:</strong>
-                            11.0% - 13.0%
-                        </li>
-                        <li>
-                            <strong>Beta Acids:</strong>
-                            3.0% - 4.5%
-                        </li>
-                        <li>
-                            <strong>Aroma Profile:</strong>
-                            Grapefruit, Lime, Passion Fruit, Lychee, Melon
-                        </li>
-                        <li>
-                            <strong>Usage:</strong>
-                            Late Kettle Addition, Dry Hopping
-                        </li>
-                        <li>
-                            <strong>Recommended Beer Styles:</strong>
-                            IPA, Double IPA, Pale Ale, American Wheat
-                        </li>
+                        {% for key, value in product_specifications.items %}
+                            <li>
+                                <strong>{{ key }}: </strong>
+                                {{ value }}
+                            </li>
+                        {% endfor %}
+
                     </ul>
                 </div>
             </div>
