@@ -17,11 +17,14 @@ services:
     build: .
     ports:
       - "8000:8000"
-      - "80:80"
     env_file:
       - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     restart: always
 

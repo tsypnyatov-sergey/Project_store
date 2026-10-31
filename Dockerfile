@@ -27,4 +27,5 @@ COPY . .
 EXPOSE 8000
 
 # Run the application server
-CMD ["gunicorn", "myproject.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Development server loads config.wsgi.application from Django settings.
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
