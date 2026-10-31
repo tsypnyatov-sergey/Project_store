@@ -31,6 +31,7 @@
             </div>
             {% empty %}<p>Корзина пуста.</p>{% endfor %}
         </div>
+        {% if items %}<a href="{% url 'checkout' %}" class="button button--primary">Оформить заказ</a>{% endif %}
         <div class="cart-summary">
             <div class="cart-summary__total"><p>Итого</p><p>{% include 'includes/price.html' with amount=total %}</p></div>
             <a href="{% url 'products:product_list' %}" class="button button--primary">Продолжить покупки</a>

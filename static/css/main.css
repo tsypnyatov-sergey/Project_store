@@ -312,6 +312,7 @@ header {
 
 /* Search & Sort Bar */
 .shop-form input,
+.shop-form textarea,
 .shop-form select {
     box-sizing: border-box;
     width: 100%;

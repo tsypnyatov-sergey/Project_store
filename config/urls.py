@@ -6,8 +6,10 @@ from django.urls import path, include
 from config import settings
 from products.views import ProductList, ProductDetailsView
 from shop.views import AccountView, RegisterView
+from orders.views import CheckoutView
 
 APPS_URLS =[
+    path('checkout/', CheckoutView.as_view(), name='checkout'),
     path('account/', AccountView.as_view(), name='account'),
     path('account/register/', RegisterView.as_view(), name='register'),
     path('account/login/', LoginView.as_view(template_name='shop/login.html'), name='login'),

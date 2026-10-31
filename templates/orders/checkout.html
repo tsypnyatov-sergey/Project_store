@@ -1,0 +1,13 @@
+﻿{% extends 'base.html' %}
+{% block title %}Оформление заказа | Log Max Russia{% endblock %}
+{% block content %}
+<section class="container account-page">
+    <h1>Оформление заказа</h1>
+    <form method="post" class="shop-form account-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button button--primary" type="submit">Оформить заказ</button>
+    </form>
+    <a href="{% url 'shop:cart' %}">Вернуться в корзину</a>
+</section>
+{% endblock %}
