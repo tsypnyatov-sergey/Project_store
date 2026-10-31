@@ -270,3 +270,57 @@ class OrderAPITests(APITestCase):
             for url in ['/api/orders/', f'/api/orders/{order.pk}/']:
                 self.assertEqual(getattr(self.client, method)(url, {}, format='json').status_code, 405)
         self.assertEqual(self.client.get(f'/api/orders/{order.pk}/cancel/').status_code, 405)
+
+
+class OpenAPITests(APITestCase):
+    def test_schema_and_swagger_are_public(self):
+        response = self.client.get('/api/schema/', HTTP_ACCEPT='application/vnd.oai.openapi+json')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('openapi', response.data)
+        response = self.client.get('/api/docs/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'SwaggerUIBundle')
+        self.assertContains(response, '/api/schema/')
+        self.assertContains(response, 'swagger-ui-bundle.js')
+
+    def test_routes_methods_and_bearer_security(self):
+        schema = self.client.get('/api/schema/', HTTP_ACCEPT='application/vnd.oai.openapi+json').data
+        paths = schema['paths']
+        expected = {'/api/products/': {'get'}, '/api/products/{id}/': {'get'},
+                    '/api/token/': {'post'}, '/api/token/refresh/': {'post'},
+                    '/api/orders/': {'get', 'post'}, '/api/orders/{id}/': {'get'},
+                    '/api/orders/{id}/cancel/': {'post'}}
+        for path, methods in expected.items():
+            self.assertEqual(set(paths[path]), methods)
+            for method in methods:
+                self.assertTrue(paths[path][method].get('summary'))
+        bearer = schema['components']['securitySchemes']['jwtAuth']
+        self.assertEqual(bearer['type'], 'http')
+        self.assertEqual(bearer['scheme'], 'bearer')
+        self.assertEqual(bearer['bearerFormat'], 'JWT')
+        self.assertIn({}, paths['/api/products/']['get']['security'])
+        for path in ['/api/orders/', '/api/orders/{id}/', '/api/orders/{id}/cancel/']:
+            for operation in paths[path].values():
+                self.assertEqual(operation['security'], [{'jwtAuth': []}])
+
+    def test_filters_order_request_and_response(self):
+        schema = self.client.get('/api/schema/', HTTP_ACCEPT='application/vnd.oai.openapi+json').data
+        paths = schema['paths']
+        parameters = {p['name']: p for p in paths['/api/products/']['get']['parameters']}
+        self.assertTrue({'search', 'category', 'min_price', 'max_price', 'page'} <= set(parameters))
+        self.assertFalse(parameters['search'].get('required', False))
+        create = paths['/api/orders/']['post']
+        self.assertIn('201', create['responses'])
+        self.assertIn('400', create['responses'])
+        self.assertIn('401', create['responses'])
+        ref = create['requestBody']['content']['application/json']['schema']['$ref'].split('/')[-1]
+        component = schema['components']['schemas'][ref]
+        self.assertEqual(set(component['required']), {'items', 'shipping_address', 'payment_method'})
+        self.assertNotIn('total_price', component['properties'])
+        self.assertNotIn('status', component['properties'])
+        item_ref = component['properties']['items']['items']['$ref'].split('/')[-1]
+        item = schema['components']['schemas'][item_ref]
+        self.assertEqual(set(item['required']), {'product_id', 'quantity'})
+        cancel = paths['/api/orders/{id}/cancel/']['post']
+        self.assertNotIn('requestBody', cancel)
+        self.assertIn('200', cancel['responses'])

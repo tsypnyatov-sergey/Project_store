@@ -1,5 +1,6 @@
 ﻿from django.db.models import Avg, Q
 from rest_framework.permissions import AllowAny
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiExample, OpenApiResponse
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import mixins, status
 from rest_framework.decorators import action
@@ -16,7 +17,17 @@ from orders.models import Order, OrderStatus
 from products.models import Product
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary='Список активных товаров',
+        description='Поиск по названию и описанию. Категория задаётся ID; цены неотрицательные. Некорректные фильтры возвращают 400.',
+        parameters=[ProductFilterSerializer],
+        responses={200: ProductSerializer(many=True), 400: OpenApiResponse(description='Ошибки параметров фильтрации')}),
+    retrieve=extend_schema(summary='Информация о товаре', description='Только активные товары. Средний рейтинг равен null при отсутствии отзывов.',
+                          responses={200: ProductSerializer, 404: OpenApiResponse(description='Товар не найден')})
+)
 class ProductViewSet(ReadOnlyModelViewSet):
+    queryset = Product.objects.none()
     serializer_class = ProductSerializer
     permission_classes = [AllowAny]
 
@@ -38,11 +49,17 @@ class ProductViewSet(ReadOnlyModelViewSet):
         return products
 
 
+@extend_schema_view(
+    list=extend_schema(summary='Мои заказы', description='Список только собственных заказов. Требуется JWT.'),
+    retrieve=extend_schema(summary='Информация о моём заказе', description='Чужой или отсутствующий заказ возвращает 404.')
+)
 class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericViewSet):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Order.objects.none()
         return Order.objects.filter(owner=self.request.user).prefetch_related('items').order_by('-created_at', '-pk')
 
     def get_serializer_class(self):
@@ -50,6 +67,15 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericView
             return OrderCreateSerializer
         return OrderSerializer
 
+    @extend_schema(
+        summary='Создать заказ',
+        description='Непустой список уникальных товаров. Способ оплаты: cash — наличными, card — картой при получении. Автор, цены, итог и pending-статус определяются сервером; лишние поля клиента игнорируются.',
+        request=OrderCreateSerializer,
+        responses={201: OrderSerializer, 400: OpenApiResponse(description='Ошибки полей или недостаточный остаток'),
+                   401: OpenApiResponse(description='Отсутствующий или недействительный JWT')},
+        examples=[OpenApiExample('Заказ техники', request_only=True, value={
+            'items': [{'product_id': 1, 'quantity': 2}],
+            'shipping_address': 'Москва, улица Лесная, дом 1', 'payment_method': 'cash'})])
     def create(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -61,6 +87,12 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericView
             raise ValidationError(error.messages)
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(summary='Отменить мой заказ',
+                   description='Разрешено только для собственного pending-заказа. Остатки восстанавливаются один раз. Повторная отмена возвращает 400.',
+                   request=None, responses={200: OrderSerializer,
+                       400: OpenApiResponse(description='Заказ нельзя отменить'),
+                       401: OpenApiResponse(description='Требуется JWT'),
+                       404: OpenApiResponse(description='Заказ не найден')})
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         order = self.get_object()
