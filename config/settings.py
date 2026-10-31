@@ -49,7 +49,16 @@ PROJECT_APPS = [
     'products',
     'api'
 ]
-ADDITIONAL_APPS = []
+ADDITIONAL_APPS = ['rest_framework']
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 6,
+}
 
 INSTALLED_APPS = SYSTEM_APPS + PROJECT_APPS+ADDITIONAL_APPS
 
