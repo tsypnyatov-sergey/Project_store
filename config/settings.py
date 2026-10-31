@@ -9,9 +9,12 @@ https://docs.djangoproject.com/en/6.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
+import logging
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
+
 
 load_dotenv('.env.local')
 
@@ -147,3 +150,9 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+LOG_LEVEL = logging.DEBUG if DEBUG else logging.INFO
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    datefmt='%m/%d/%Y %I:%M:%S %p',
+                    handlers=[logging.StreamHandler(sys.stdout)]
+                    )

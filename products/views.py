@@ -1,5 +1,6 @@
+import logging
 
-
+from django.db.models import Q, QuerySet
 from django.shortcuts import render
 from django.views.generic import ListView, TemplateView, DetailView
 
@@ -12,6 +13,39 @@ class ProductList(ListView):
     context_object_name = 'products'
     template_name = 'products/product_list.html'
     paginate_by = 6
+
+    queryset = (Product.objects
+                .select_related('category')
+                .prefetch_related('reviews__owner'))
+
+    def get_queryset(self) -> QuerySet:
+        q = super().get_queryset()
+        cats = self.request.GET.get('categories')
+        sorting = self.request.GET.get('sorting')
+        search = self.request.GET.get('search')
+        min_price = self.request.GET.get('min_price')
+        max_price = self.request.GET.get('max_price')
+
+        logging.debug(f'Get params: {self.request.GET}')
+
+        if cats:
+            cats = cats.split(',')
+            q = q.filter(category__slug__in=cats)
+
+        if search:
+            q = q.filter(Q(name__icontains=search),
+                                                 Q(description__icontains=search))
+
+        if min_price:
+            q = q.filter(price__gte=min_price)
+        if max_price:
+            q = q.filter(price__lte=max_price)
+        if sorting:
+            q=q.order_by(sorting)
+        return q
+
+
+
 
 class GuidesReceiptView(TemplateView):
     template_name = 'products/guides-recipes.html'
