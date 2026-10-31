@@ -82,6 +82,18 @@ class ProductAPITests(APITestCase):
 
 
 class JWTTests(APITestCase):
+    def test_urls_use_standard_simplejwt_views(self):
+        from django.urls import resolve, reverse
+        from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+        for name, url, view in [
+            ('token_obtain_pair', '/api/token/', TokenObtainPairView),
+            ('token_refresh', '/api/token/refresh/', TokenRefreshView),
+        ]:
+            self.assertEqual(reverse(name), url)
+            self.assertIs(resolve(url).func.view_class, view)
+            self.assertEqual(self.client.get(url).status_code, 405)
+
     @classmethod
     def setUpTestData(cls):
         cls.password = 'Strong-Password-93857!'
@@ -293,7 +305,8 @@ class OpenAPITests(APITestCase):
         for path, methods in expected.items():
             self.assertEqual(set(paths[path]), methods)
             for method in methods:
-                self.assertTrue(paths[path][method].get('summary'))
+                if not path.startswith('/api/token/'):
+                    self.assertTrue(paths[path][method].get('summary'))
         bearer = schema['components']['securitySchemes']['jwtAuth']
         self.assertEqual(bearer['type'], 'http')
         self.assertEqual(bearer['scheme'], 'bearer')
