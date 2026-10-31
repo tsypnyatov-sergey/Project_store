@@ -132,3 +132,141 @@ class JWTTests(APITestCase):
         token = str(RefreshToken.for_user(self.user).access_token)
         request = factory.get('/', HTTP_AUTHORIZATION='Bearer ' + token)
         self.assertEqual(ProtectedView.as_view()(request).status_code, 200)
+
+
+class OrderAPITests(APITestCase):
+    def setUp(self):
+        from rest_framework_simplejwt.tokens import RefreshToken
+        self.user = get_user_model().objects.create_user(username='buyer')
+        self.other = get_user_model().objects.create_user(username='other')
+        self.token = str(RefreshToken.for_user(self.user).access_token)
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token)
+        category = Category.objects.create(name='Equipment')
+        self.product = Product.objects.create(name='Machine', category=category, price='10.25', stock=5)
+        self.payload = {'items': [{'product_id': self.product.pk, 'quantity': 2}],
+                        'shipping_address': 'Москва, дом 1', 'payment_method': 'cash'}
+
+    def create_order(self, owner=None, status='pending'):
+        from orders.models import Order
+        order = Order.create_from_cart(owner or self.user, {str(self.product.pk): 1}, 'Москва', 'cash')
+        if status != 'pending':
+            Order.objects.filter(pk=order.pk).update(status=status)
+            order.refresh_from_db()
+        return order
+
+    def test_all_operations_require_valid_jwt(self):
+        order = self.create_order()
+        for header in ['', 'Bearer invalid']:
+            self.client.credentials(HTTP_AUTHORIZATION=header)
+            for method, url in [('get', '/api/orders/'), ('post', '/api/orders/'),
+                                ('get', f'/api/orders/{order.pk}/'),
+                                ('post', f'/api/orders/{order.pk}/cancel/')]:
+                self.assertEqual(getattr(self.client, method)(url, {}, format='json').status_code, 401)
+        self.client.credentials()
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get('/api/orders/').status_code, 401)
+
+    def test_only_own_orders_visible(self):
+        order = self.create_order()
+        foreign = self.create_order(owner=self.other)
+        response = self.client.get('/api/orders/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([o['id'] for o in response.data['results']], [order.pk])
+        detail = self.client.get(f'/api/orders/{order.pk}/')
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.data['items'][0]['product_id'], self.product.pk)
+        self.assertEqual(self.client.get(f'/api/orders/{foreign.pk}/').status_code, 404)
+        self.assertEqual(self.client.post(f'/api/orders/{foreign.pk}/cancel/').status_code, 404)
+        self.assertEqual(self.client.get('/api/orders/999999/').status_code, 404)
+
+    def test_create_uses_database_prices_and_preserves_session_cart(self):
+        from orders.models import Order
+        session = self.client.session
+        session['cart'] = {str(self.product.pk): 4}
+        session.save()
+        payload = {**self.payload, 'user_id': self.other.pk, 'owner': self.other.pk,
+                   'total_price': '0.01', 'status': 'paid', 'price': '0.01'}
+        payload['items'] = [{'product_id': self.product.pk, 'quantity': 2,
+                             'unit_price': '0.01', 'price': '0.01'}]
+        response = self.client.post('/api/orders/', payload, format='json')
+        self.assertEqual(response.status_code, 201)
+        order = Order.objects.get()
+        self.assertEqual(order.owner, self.user)
+        self.assertEqual(order.status, 'pending')
+        self.assertEqual(str(order.total_price), '20.50')
+        self.assertEqual(str(order.items.get().price), '10.25')
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 3)
+        self.assertEqual(self.client.session['cart'], {str(self.product.pk): 4})
+
+    def test_create_without_browser_session(self):
+        response = self.client.post('/api/orders/', self.payload, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['total_price'], '20.50')
+
+    def test_invalid_input_rejected(self):
+        from orders.models import Order
+        variants = [dict(self.payload, items=[]), dict(self.payload, items=self.payload['items'] * 2),
+                    dict(self.payload, payment_method='bitcoin'), dict(self.payload, shipping_address=''), {}]
+        for quantity in [0, -1, 'abc', 1.5, None, True]:
+            variants.append(dict(self.payload, items=[{'product_id': self.product.pk, 'quantity': quantity}]))
+        for payload in variants:
+            with self.subTest(payload=payload):
+                response = self.client.post('/api/orders/', payload, format='json')
+                self.assertEqual(response.status_code, 400)
+                self.assertFalse(Order.objects.exists())
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 5)
+
+    def test_missing_inactive_and_insufficient_products(self):
+        from orders.models import Order, OrderItem
+        for pk, quantity, active in [(999999, 1, True), (self.product.pk, 6, True), (self.product.pk, 1, False)]:
+            self.product.is_active = active
+            self.product.save()
+            response = self.client.post('/api/orders/', dict(self.payload, items=[{'product_id': pk, 'quantity': quantity}]), format='json')
+            self.assertEqual(response.status_code, 400)
+            self.assertFalse(Order.objects.exists())
+            self.assertFalse(OrderItem.objects.exists())
+            self.product.refresh_from_db()
+            self.assertEqual(self.product.stock, 5)
+
+    def test_mixed_valid_and_invalid_items_do_not_create_partial_order(self):
+        from orders.models import Order, OrderItem
+        payload = dict(self.payload, items=self.payload['items'] + [{'product_id': 999999, 'quantity': 1}])
+        self.assertEqual(self.client.post('/api/orders/', payload, format='json').status_code, 400)
+        self.assertFalse(Order.objects.exists())
+        self.assertFalse(OrderItem.objects.exists())
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 5)
+
+    def test_cancel_restores_stock_only_once(self):
+        order = self.create_order()
+        url = f'/api/orders/{order.pk}/cancel/'
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['status'], 'cancelled')
+        self.assertEqual(self.client.post(url).status_code, 400)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 5)
+
+    def test_nonpending_cancel_rejected_even_for_staff(self):
+        from rest_framework_simplejwt.tokens import RefreshToken
+        self.user.is_staff = True
+        self.user.save()
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(RefreshToken.for_user(self.user).access_token))
+        for status in ['paid', 'shipped', 'delivered']:
+            order = self.create_order(status=status)
+            self.product.refresh_from_db()
+            stock = self.product.stock
+            self.assertEqual(self.client.post(f'/api/orders/{order.pk}/cancel/').status_code, 400)
+            order.refresh_from_db()
+            self.assertEqual(order.status, status)
+            self.product.refresh_from_db()
+            self.assertEqual(self.product.stock, stock)
+
+    def test_put_patch_delete_not_available(self):
+        order = self.create_order()
+        for method in ['put', 'patch', 'delete']:
+            for url in ['/api/orders/', f'/api/orders/{order.pk}/']:
+                self.assertEqual(getattr(self.client, method)(url, {}, format='json').status_code, 405)
+        self.assertEqual(self.client.get(f'/api/orders/{order.pk}/cancel/').status_code, 405)

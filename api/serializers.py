@@ -1,6 +1,7 @@
 ﻿from rest_framework import serializers
 
 from products.models import Category, Product
+from orders.models import Order, OrderItem
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -25,3 +26,37 @@ class ProductFilterSerializer(serializers.Serializer):
         if minimum is not None and maximum is not None and minimum > maximum:
             raise serializers.ValidationError({'max_price': 'Максимальная цена меньше минимальной.'})
         return attrs
+
+
+class OrderItemInputSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField(min_value=1, max_value=9223372036854775807)
+    quantity = serializers.IntegerField(min_value=1, max_value=2147483647)
+
+
+class OrderCreateSerializer(serializers.Serializer):
+    items = OrderItemInputSerializer(many=True, allow_empty=False)
+    shipping_address = serializers.CharField(max_length=255)
+    payment_method = serializers.ChoiceField(choices=['cash', 'card'])
+
+    def validate_items(self, items):
+        product_ids = [item['product_id'] for item in items]
+        if len(product_ids) != len(set(product_ids)):
+            raise serializers.ValidationError('Один товар нельзя указывать несколько раз.')
+        return items
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = ['product_id', 'quantity', 'price']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'status', 'payment_method', 'shipping_address',
+                  'total_price', 'created_at', 'items']
