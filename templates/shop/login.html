@@ -1,0 +1,14 @@
+﻿{% extends 'base.html' %}
+{% block title %}Вход | Log Max Russia{% endblock %}
+{% block content %}
+<section class="container account-page">
+    <h1>Вход</h1>
+    <form method="post" class="shop-form account-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="button button--primary">Войти</button>
+        <a href="{% url 'register' %}">Зарегистрироваться</a>
+    </form>
+</section>
+{% endblock %}

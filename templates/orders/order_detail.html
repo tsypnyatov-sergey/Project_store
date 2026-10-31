@@ -1,0 +1,20 @@
+﻿{% extends 'base.html' %}
+{% block title %}Заказ №{{ order.pk }} | Log Max Russia{% endblock %}
+{% block content %}
+<section class="container account-page">
+    <h1>Заказ №{{ order.pk }}</h1>
+    {% include 'includes/order_status.html' %}
+    <p>Дата: {{ order.created_at|date:'d.m.Y H:i' }}</p>
+    <p>Адрес доставки: {{ order.shipping_address }}</p>
+    <p>Способ оплаты: {{ order.payment_method }}</p>
+    {% for item in order.items.all %}
+    <article class="sidebar">
+        <h2>{{ item.product.name }}</h2>
+        <p>Количество: {{ item.quantity }}</p>
+        <p>Цена за единицу: {% include 'includes/price.html' with amount=item.price %}</p>
+    </article>
+    {% endfor %}
+    <p>Итого: {% include 'includes/price.html' with amount=order.total_price %}</p>
+    <a href="{% url 'account' %}" class="button button--secondary">Мои заказы</a>
+</section>
+{% endblock %}

@@ -2084,3 +2084,9 @@ footer { padding: 32px; }
     .header-auth-actions .button { flex: 1 1 auto; }
     .cart-item__price { overflow-wrap: anywhere; }
 }
+
+.account-page { padding-top: 40px; padding-bottom: 48px; display: flex; flex-direction: column; gap: 24px; }
+.account-form { width: 100%; max-width: 480px; }
+.account-form p { display: flex; flex-direction: column; gap: 8px; }
+.account-form .helptext { color: var(--grey-text); font-size: 14px; }
+.account-orders { display: grid; gap: 16px; }

@@ -1,0 +1,7 @@
+﻿<p>Статус:
+{% if order.status == 'pending' %}Ожидает оплаты
+{% elif order.status == 'paid' %}Оплачен
+{% elif order.status == 'shipped' %}Отправлен
+{% elif order.status == 'delivered' %}Доставлен
+{% elif order.status == 'canceled' %}Отменён
+{% else %}Неизвестен{% endif %}</p>

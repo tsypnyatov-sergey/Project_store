@@ -64,6 +64,9 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'config.urls'
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'account'
+LOGOUT_REDIRECT_URL = 'product_list_main'
 
 TEMPLATES = [
     {

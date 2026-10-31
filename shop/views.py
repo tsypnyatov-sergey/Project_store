@@ -2,9 +2,14 @@
 
 from django import forms
 from django.contrib import messages
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, ListView
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from orders.models import Order
 from products.models import Product
 
 
@@ -81,3 +86,21 @@ def cart_remove(request, product_id):
     request.session['cart'] = cart
     messages.success(request, 'Товар удалён из корзины.')
     return redirect('shop:cart')
+
+
+class RegisterView(CreateView):
+    form_class = UserCreationForm
+    template_name = 'shop/register.html'
+    success_url = reverse_lazy('login')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Регистрация завершена. Теперь вы можете войти.')
+        return super().form_valid(form)
+
+
+class AccountView(LoginRequiredMixin, ListView):
+    template_name = 'shop/account.html'
+    context_object_name = 'orders'
+
+    def get_queryset(self):
+        return Order.objects.filter(owner=self.request.user)

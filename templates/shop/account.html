@@ -1,0 +1,19 @@
+﻿{% extends 'base.html' %}
+{% block title %}Личный кабинет | Log Max Russia{% endblock %}
+{% block content %}
+<section class="container account-page">
+    <h1>Личный кабинет</h1>
+    <p>Пользователь: {{ user.username }}</p>
+    <h2>Мои заказы</h2>
+    <div class="account-orders">
+        {% for order in orders %}
+        <article class="sidebar">
+            <h3><a href="{% url 'orders:detail' order.pk %}">Заказ №{{ order.pk }}</a></h3>
+            <p>Дата: {{ order.created_at|date:'d.m.Y H:i' }}</p>
+            {% include 'includes/order_status.html' %}
+            <p>Итого: {% include 'includes/price.html' with amount=order.total_price %}</p>
+        </article>
+        {% empty %}<p>У вас пока нет заказов.</p>{% endfor %}
+    </div>
+</section>
+{% endblock %}

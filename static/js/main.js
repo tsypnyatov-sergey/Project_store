@@ -1,32 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
-
-    // --- General logic for all pages (Login/Logout Simulation) ---
-    const loginForm = document.getElementById('login-form');
-    const logoutButton = document.getElementById('logout-button');
-    function checkLoginStatus() {
-        if (localStorage.getItem('isLoggedIn') === 'true') {
-            document.body.classList.add('user-logged-in');
-        } else {
-            document.body.classList.remove('user-logged-in');
-        }
-    }
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            localStorage.setItem('isLoggedIn', 'true');
-            const nextUrl = new URLSearchParams(window.location.search).get('next');
-            window.location.href = nextUrl || 'home.html';
-        });
-    }
-    if (logoutButton) {
-        logoutButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            localStorage.removeItem('isLoggedIn');
-            window.location.href = 'home.html';
-        });
-    }
-    checkLoginStatus();
-
+﻿document.addEventListener('DOMContentLoaded', function() {
 
     // --- Logic for the Main Page (home.html) ---
     const homePageContent = document.querySelector('.main-content-grid');
