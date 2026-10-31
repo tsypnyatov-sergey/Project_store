@@ -1,9 +1,15 @@
 from django.db.models import Avg, Q, Sum
 from django.shortcuts import render
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.contrib.auth.views import redirect_to_login
+from django.db import IntegrityError, transaction
 from django.views.generic import ListView, TemplateView, DetailView
 
 from products.models import Product
 from products.forms import ProductFilterForm
+from reviews.forms import ReviewForm
+from reviews.models import Review
 
 
 # Create your views here.
@@ -71,6 +77,24 @@ class ProductDetailsView(DetailView):
 
 
 
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not request.user.is_authenticated:
+            messages.error(request, 'Войдите, чтобы оставить отзыв.')
+            return redirect_to_login(request.path)
+        form = ReviewForm(request.POST, instance=Review(owner=request.user, product=self.object))
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    form.save()
+            except IntegrityError:
+                form.add_error(None, 'Отзыв не сохранён. Возможно, вы уже отправили отзыв на этот товар.')
+            else:
+                messages.success(request, 'Спасибо! Ваш отзыв опубликован.')
+                return redirect('product_detail', slug=self.object.slug)
+        messages.error(request, 'Отзыв не опубликован. Исправьте ошибки формы.')
+        return self.render_to_response(self.get_context_data(review_form=form))
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         product = self.object
@@ -83,6 +107,8 @@ class ProductDetailsView(DetailView):
         context['has_half_star'] = has_half_star
         context['empty_stars'] = range(empty_stars)
         context['reviews_count'] = product.reviews.count()
+        if self.request.user.is_authenticated and 'review_form' not in context:
+            context['review_form'] = ReviewForm(instance=Review(owner=self.request.user, product=product))
         for review in product.reviews.all():
             review.stars = range(review.rating)
             review.empty_stars = range(5-review.rating)

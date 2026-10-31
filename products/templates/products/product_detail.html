@@ -133,6 +133,15 @@
             <h2 class="reviews-title">
                 Отзывы покупателей
             </h2>
+            {% if user.is_authenticated %}
+            <form method="post" class="shop-form account-form">
+                {% csrf_token %}
+                {{ review_form.as_p }}
+                <button type="submit" class="button button--primary">Опубликовать отзыв</button>
+            </form>
+            {% else %}
+            <p><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Войдите</a>, чтобы оставить отзыв после получения товара.</p>
+            {% endif %}
             <div class="reviews-grid">
 
                 {% for review in product.reviews.all %}

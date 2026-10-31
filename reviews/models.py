@@ -25,3 +25,9 @@ class Review(models.Model):
     def get_absolute_url(self):
         return f'/reviews/{self.id}'
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['owner', 'product'], name='unique_owner_product_review'),
+            models.CheckConstraint(condition=models.Q(rating__gte=1, rating__lte=5), name='review_rating_range'),
+        ]
+
