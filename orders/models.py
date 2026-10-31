@@ -97,8 +97,8 @@ class Order(models.Model):
         self.status = status
 
     class Meta:
-        verbose_name_plural = 'Заказы'
-        verbose_name = 'Заказ'
+        verbose_name_plural = 'Orders'
+        verbose_name = 'Order'
         ordering = ['-created_at']
         constraints = [models.CheckConstraint(condition=models.Q(total_price__gte=0), name='order_total_nonnegative')]
 
