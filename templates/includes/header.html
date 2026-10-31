@@ -1,36 +1,30 @@
-{% load static %}
-
+﻿{% load static %}
 <header>
     <div class="header-container">
         <a href="{% url 'product_list_main' %}" class="header__logo">
-            <img src="{% static 'img/logo.svg' %}" alt="Hop & Barley Logo">
-            <p class="logo-text">Log Max Russia</p>
+            <img src="{% static 'img/logo.svg' %}" alt="Логотип Log Max Russia"><span class="logo-text">Log Max Russia</span>
         </a>
-        <nav class="header__nav">
+        <nav class="header__nav" aria-label="Основная навигация">
             <ul>
-                <li><a href="{% url 'products:product_list' %}">Products</a></li>
-                <li><a href="{% url 'products:guides-recipes' %}">Guides & Recipes</a></li>
-                <li><a href="#">Community</a></li>
-                <li><a href="#">Resources</a></li>
-                <li><a href="#">Contact</a></li>
+                <li><a href="{% url 'products:product_list' %}">Каталог техники</a></li>
+                <li><a href="{% url 'shop:cart' %}">Корзина</a></li>
             </ul>
         </nav>
-
-        <!-- Block for unauthorized user -->
-        <div class="header__auth-buttons" id="auth-guest">
-            <a href="#" class="button button--secondary">Sign in</a>
-            <a href="#" class="button button--primary">Register</a>
+        {% if not user.is_authenticated %}
+        {% url 'login' as login_url %}
+        {% url 'register' as register_url %}
+        <div class="header-auth-actions">
+            {% if login_url %}
+            <a href="{{ login_url }}" class="button button--secondary">Войти</a>
+            {% else %}
+            <button type="button" class="button button--secondary" disabled title="Вход пока недоступен">Войти</button>
+            {% endif %}
+            {% if register_url %}
+            <a href="{{ register_url }}" class="button button--primary">Регистрация</a>
+            {% else %}
+            <button type="button" class="button button--primary" disabled title="Регистрация пока недоступна">Регистрация</button>
+            {% endif %}
         </div>
-
-        <!-- Block for authorized user -->
-        <div class="header__user-actions" id="auth-user">
-            <a href="#" class="user-icon" aria-label="My Account">
-                <img src="{% static 'img/icons/User_alt.svg' %}" alt="User Account">
-            </a>
-            <a href="#" class="cart-icon" aria-label="Shopping Cart">
-                <img src="{% static 'img/icons/Shopping_bag.svg' %}" alt="Shopping Cart">
-            </a>
-
-        </div>
+        {% endif %}
     </div>
 </header>

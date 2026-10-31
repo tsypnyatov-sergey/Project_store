@@ -1,10 +1,9 @@
-import logging
-
-from django.db.models import Q, QuerySet
+from django.db.models import Avg, Q, Sum
 from django.shortcuts import render
 from django.views.generic import ListView, TemplateView, DetailView
 
 from products.models import Product
+from products.forms import ProductFilterForm
 
 
 # Create your views here.
@@ -14,35 +13,46 @@ class ProductList(ListView):
     template_name = 'products/product_list.html'
     paginate_by = 6
 
-    queryset = (Product.objects
+    queryset = (Product.objects.filter(is_active=True)
                 .select_related('category')
                 .prefetch_related('reviews__owner'))
 
-    def get_queryset(self) -> QuerySet:
-        q = super().get_queryset()
-        cats = self.request.GET.get('categories')
-        sorting = self.request.GET.get('sorting')
-        search = self.request.GET.get('search')
-        min_price = self.request.GET.get('min_price')
-        max_price = self.request.GET.get('max_price')
+    def get_queryset(self):
+        products = super().get_queryset()
+        self.filter_form = ProductFilterForm(self.request.GET)
+        if not self.filter_form.is_valid():
+            return products.none()
 
-        logging.debug(f'Get params: {self.request.GET}')
+        filters = self.filter_form.cleaned_data
+        if filters['categories']:
+            products = products.filter(category=filters['categories'])
+        if filters['search']:
+            products = products.filter(
+                Q(name__icontains=filters['search']) |
+                Q(description__icontains=filters['search']))
+        if filters['min_price'] is not None:
+            products = products.filter(price__gte=filters['min_price'])
+        if filters['max_price'] is not None:
+            products = products.filter(price__lte=filters['max_price'])
 
-        if cats:
-            cats = cats.split(',')
-            q = q.filter(category__slug__in=cats)
+        sorting = filters['sorting'] or '-created_at'
+        if sorting == 'popularity':
+            products = products.annotate(popularity=Sum(
+                'orderitem__quantity',
+                filter=Q(orderitem__order__status__in=['paid', 'shipped', 'delivered']),
+                default=0))
+            sorting = '-popularity'
+        return products.order_by(sorting, '-pk')
 
-        if search:
-            q = q.filter(Q(name__icontains=search),
-                                                 Q(description__icontains=search))
+    def paginate_queryset(self, queryset, page_size):
+        paginator = self.get_paginator(queryset, page_size)
+        page = paginator.get_page(self.request.GET.get('page'))
+        return paginator, page, page.object_list, page.has_other_pages()
 
-        if min_price:
-            q = q.filter(price__gte=min_price)
-        if max_price:
-            q = q.filter(price__lte=max_price)
-        if sorting:
-            q=q.order_by(sorting)
-        return q
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter_form'] = self.filter_form
+        return context
 
 
 
@@ -54,7 +64,7 @@ class GuidesReceiptView(TemplateView):
 class ProductDetailsView(DetailView):
     template_name = 'products/product_detail.html'
     model = Product
-    queryset = (Product.objects
+    queryset = (Product.objects.filter(is_active=True)
                 .select_related('category')
                 .prefetch_related('reviews__owner'))
 
@@ -64,8 +74,11 @@ class ProductDetailsView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         product = self.object
-        context['average_rating'] = product.get_rating()
-        full_stars, has_half_star, empty_stars = product.get_stars()
+        rating = product.reviews.aggregate(average=Avg('rating'))['average']
+        context['average_rating'] = rating
+        full_stars = int(rating or 0)
+        has_half_star = rating is not None and rating - full_stars >= 0.5
+        empty_stars = 5 - full_stars - int(has_half_star)
         context['full_stars'] = range(full_stars)
         context['has_half_star'] = has_half_star
         context['empty_stars'] = range(empty_stars)

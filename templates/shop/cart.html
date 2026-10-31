@@ -1,0 +1,40 @@
+﻿{% extends 'base.html' %}
+{% block title %}Корзина | Log Max Russia{% endblock %}
+{% block content %}
+<div class="cart-page-wrapper">
+    <div class="cart-container">
+        <h1 class="cart-title">Корзина</h1>
+        <div class="cart-items-list">
+            {% for item in items %}
+            <div class="cart-item">
+                {% if item.product.image %}
+                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="cart-item__image">
+                {% endif %}
+                <div class="cart-item__body">
+                    <div class="cart-item__details">
+                        <h2 class="cart-item__name"><a href="{% url 'product_detail' item.product.slug %}">{{ item.product.name }}</a></h2>
+                        <p class="cart-item__price">{% include 'includes/price.html' with amount=item.product.price %} × {{ item.quantity }} = {% include 'includes/price.html' with amount=item.subtotal %}</p>
+                    </div>
+                    <div class="cart-item__actions">
+                        <form class="shop-form" method="post" action="{% url 'shop:cart_update' item.product.pk %}">
+                            {% csrf_token %}
+                            <label for="quantity-{{ item.product.pk }}">Количество</label>
+                            <input id="quantity-{{ item.product.pk }}" type="number" name="quantity" min="1" max="{{ item.product.stock }}" value="{{ item.quantity }}" required>
+                            <button class="button button--secondary" type="submit">Обновить</button>
+                        </form>
+                        <form class="shop-form" method="post" action="{% url 'shop:cart_remove' item.product.pk %}">
+                            {% csrf_token %}
+                            <button class="button button--secondary" type="submit">Удалить</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}<p>Корзина пуста.</p>{% endfor %}
+        </div>
+        <div class="cart-summary">
+            <div class="cart-summary__total"><p>Итого</p><p>{% include 'includes/price.html' with amount=total %}</p></div>
+            <a href="{% url 'products:product_list' %}" class="button button--primary">Продолжить покупки</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,15 +1,15 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 
 {% load static %}
 
 {% block title %}
-{{ product.name }} | Log Max
+{{ product.name }} | Log Max Russia
 {% endblock %}
 
 
 {% block content %}
 
-<main class="page-product">
+<div class="page-product">
     <div class="container">
         <!-- ============================= -->
         <!-- PRODUCT INFO -->
@@ -24,6 +24,8 @@
                         alt="{{ product.name }}"
                         class="product-image"
                 >
+                {% else %}
+                <p>Изображение отсутствует</p>
                 {% endif %}
             </div>
 
@@ -58,11 +60,11 @@
                             {{ average_rating|floatformat:1 }} / 5
                         </span>
                         <span class="reviews-count">
-                            ({{ reviews_count }} reviews)
+                            (Отзывов: {{ reviews_count }})
                         </span>
                         {% else %}
                         <span class="no-rating">
-                            No reviews yet
+                            Нет оценок
                         </span>
                         {% endif %}
                     </div>
@@ -70,53 +72,24 @@
                     <!-- Price -->
                     <div class="price-section">
                         <span class="price-tag">
-                            per 100g
+                            Цена
                         </span>
                         <p class="product-price">
-                            ${{ product.price }}
+                            {% include 'includes/price.html' with amount=product.price %}
                         </p>
                     </div>
                 </div>
                 <!-- Description -->
+                <p class="product-stock">Остаток: {{ product.stock }}</p>
                 <div class="product-description">
                     {{ product.description }}
                 </div>
-                <!-- Cart controls -->
-                <div class="cart-controls">
-                    <!-- Add to cart -->
-                    <button
-                            class="button button--primary add-to-cart-button"
-                            id="add-to-cart-btn"
-                    >
-                        <i class="fa-solid fa-cart-shopping"></i>
-                        <span>
-                            Add to Cart
-                        </span>
-                    </button>
-                    <!-- Quantity -->
-                    <div
-                            class="quantity-counter is-hidden"
-                            id="quantity-counter"
-                    >
-                        <button
-                                class="quantity-btn"
-                                data-action="decrease"
-                                aria-label="Decrease quantity"
-                        >
-                            <i class="fa-solid fa-minus"></i>
-                        </button>
-                        <span class="quantity-value">
-                            1 in cart
-                        </span>
-                        <button
-                                class="quantity-btn"
-                                data-action="increase"
-                                aria-label="Increase quantity"
-                        >
-                            <i class="fa-solid fa-plus"></i>
-                        </button>
-                    </div>
-                </div>
+                <form method="post" action="{% url 'shop:cart_add' product.pk %}" class="product-cart-form shop-form">
+                    {% csrf_token %}
+                    <label for="cart-quantity">Количество</label>
+                    <input id="cart-quantity" type="number" name="quantity" min="1" max="{{ product.stock }}" value="1" required>
+                    <button type="submit" class="button button--primary" {% if not product.stock %}disabled{% endif %}>Добавить в корзину</button>
+                </form>
             </div>
         </section>
 
@@ -129,7 +102,7 @@
             <div class="accordion-item">
                 <div class="accordion-title">
                     <h3>
-                        Technical Specifications
+                        Характеристики
                     </h3>
                     <i
                             class="fa-solid fa-chevron-down accordion-icon"
@@ -139,7 +112,7 @@
                 <div class="accordion-content">
 
                     <ul>
-                        {% for key, value in product_specifications.items %}
+                        {% for key, value in product.specifications.items %}
                             <li>
                                 <strong>{{ key }}: </strong>
                                 {{ value }}
@@ -158,7 +131,7 @@
 
         <section class="reviews-section">
             <h2 class="reviews-title">
-                Latest reviews
+                Отзывы покупателей
             </h2>
             <div class="reviews-grid">
 
@@ -194,7 +167,7 @@
                     <div class="review-author">
                         <img
                                 src="{% static 'img/avatars/avatar2.svg' %}"
-                                alt="User avatar"
+                                alt="Аватар пользователя"
                                 class="author-avatar"
                         >
                         <span class="author-name">
@@ -206,12 +179,12 @@
                 <!-- No reviews -->
                 <div class="no-reviews">
                     <p>
-                        There are no reviews yet.
+                        Отзывов пока нет.
                     </p>
                 </div>
                 {% endfor %}
             </div>
         </section>
     </div>
-</main>
+</div>
 {% endblock %}

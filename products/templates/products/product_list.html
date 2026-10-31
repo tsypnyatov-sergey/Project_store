@@ -1,76 +1,48 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% load static %}
 
 {% block title %}
 
-    Каталог товаров | Log Max
+    Каталог товаров | Log Max Russia
 
 {% endblock %}
 
 {% block content %}
-    <section class="hero-banner">
-        <img src="{% static 'img/background/hopfen-fields.jpg' %}" alt="Beautiful hops on a dark background" class="hero-banner__image">
-        <div class="hero-banner__overlay"></div>
-    </section>
-
+    <div class="container page-heading"><h1>Каталог техники</h1><p>Лесозаготовительная техника и оборудование</p></div>
     <div class="container main-content-grid">
         <aside class="sidebar filter-menu">
-            <div class="sidebar__section">
-                <h3 class="section-title">Keywords</h3>
-                <div class="keywords-list">
+            <form method="get" class="catalog-filter-form shop-form">
+                <div class="sidebar__section">
+                    <h3 class="section-title">Фильтры товаров</h3>
+                    {{ filter_form.non_field_errors }}
+                    {% for field in filter_form %}
+                    <div class="sidebar__section">
+                        <label for="{{ field.id_for_label }}" class="section-title">
+                            {% if field.name == 'search' %}Поиск
+                            {% elif field.name == 'categories' %}Категория
+                            {% elif field.name == 'min_price' %}Цена от
+                            {% elif field.name == 'max_price' %}Цена до
+                            {% elif field.name == 'sorting' %}Сортировка{% endif %}
+                        </label>
+                        {{ field }}
+                        {{ field.errors }}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="button button--primary">Применить</button>
+                    <a href="{{ request.path }}" class="button button--secondary">Сбросить</a>
                 </div>
-            </div>
-
-            <div class="sidebar__section">
-                <h3 class="section-title">Product Type</h3>
-                <div class="checkbox-group">
-                    <label class="checkbox-container">Hops
-                        <input type="checkbox" data-keyword="Hops">
-                        <span class="checkmark"></span>
-                    </label>
-                    <label class="checkbox-container">Malts
-                        <input type="checkbox" data-keyword="Malts">
-                        <span class="checkmark"></span>
-                    </label>
-                    <label class="checkbox-container">Yeast
-                        <input type="checkbox" data-keyword="Yeast">
-                        <span class="checkmark"></span>
-                    </label>
-                    <label class="checkbox-container">Adjuncts
-                        <input type="checkbox" data-keyword="Adjuncts">
-                        <span class="checkmark"></span>
-                    </label>
-                </div>
-            </div>
+            </form>
         </aside>
-
         <section class="products-area product-grid-section">
-            <div class="search-sort-bar">
-                <div class="search-input-wrapper">
-                    <input type="text" placeholder="Search" class="search-input">
-                    <button class="search-button" aria-label="Search">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </button>
-                </div>
-                <div class="sort-options">
-                    <button class="sort-button active-sort">
-                        <span>New</span>
-                    </button>
-                    <button class="sort-button">Price ascending</button>
-                    <button class="sort-button">Price descending</button>
-                    <button class="sort-button">Rating</button>
-                </div>
-            </div>
-
             <div class="product-grid">
 
                 {% for product in products %}
-                <a href="{{ product.get_absolute_url }}" class="product-card-link">
+                <a href="{% url 'product_detail' product.slug %}" class="product-card-link">
                     <div class="product-card">
-                        <img src="{{ product.image.url }}." alt="Citra Hops" class="product-card__image">
+                        {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-card__image">{% else %}<div class="product-card__image product-image-placeholder">Изображение отсутствует</div>{% endif %}
                         <div class="product-card__info">
                             <h4 class="product-card__name">{{ product.name}}</h4>
-                            <p class="product-card__price">${{ product.price }}</p>
+                            <p class="product-card__price">{% include 'includes/price.html' with amount=product.price %}</p>
                             <p class="product-card__description">{{ product.description | truncatewords:15 }}</p>
                         </div>
                     </div>
@@ -82,7 +54,7 @@
             {% if products %}
             {% include 'includes/pagination.html' %}
             {% else %}
-            <p>No products found.</p>
+            <p>Товары не найдены.</p>
             {% endif %}
 
         </section>

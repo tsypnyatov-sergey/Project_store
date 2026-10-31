@@ -1,15 +1,10 @@
-{% load static %}
-
-<footer>
-    <img src="{% static 'img/background/image-footer.svg' %}" alt="Hop & Barley Hops Logo" class="footer__hops-logo">
-    <nav class="footer__nav">
+﻿<footer>
+    <a href="{% url 'product_list_main' %}" class="logo-text">Log Max Russia</a>
+    <nav class="footer__nav" aria-label="Навигация в подвале">
         <ul>
-            <li><a href="#">Contact</a></li>
-            <li><a href="#">FAQ</a></li>
-            <li><a href="#">Community</a></li>
-            <li><a href="#">Resources</a></li>
-            <li><a href="#">License</a></li>
+            <li><a href="{% url 'products:product_list' %}">Каталог техники</a></li>
+            <li><a href="{% url 'shop:cart' %}">Корзина</a></li>
         </ul>
     </nav>
-    <p class="footer__copyright">© Log Max Russia 2026. All rights reserved</p>
+    <p class="footer__copyright">© Log Max Russia 2026. Все права защищены.</p>
 </footer>
