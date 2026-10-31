@@ -47,6 +47,13 @@ class ReviewTests(TestCase):
         self.assertContains(response, 'только после получения')
         self.assertFalse(Review.objects.exists())
 
+    def test_user_without_any_orders_cannot_review(self):
+        response = self.client.post(self.url, self.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Отзыв не опубликован')
+        self.assertContains(response, 'только после получения')
+        self.assertFalse(Review.objects.exists())
+
     def test_other_product_purchase_does_not_count(self):
         other = Product.objects.create(name='Other', category=self.product.category, price=10)
         self.purchase(product=other)
