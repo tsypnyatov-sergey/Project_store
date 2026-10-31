@@ -21,9 +21,10 @@ def cart_detail(request):
     cart = request.session.get('cart', {})
     items = []
     total = Decimal('0.00')
+    products = Product.objects.filter(is_active=True).in_bulk(cart)
     # Prices and availability always come from the database.
     for product_id, quantity in list(cart.items()):
-        product = Product.objects.filter(pk=product_id, is_active=True).first()
+        product = products.get(int(product_id))
         if product is None or product.stock == 0:
             del cart[product_id]
             messages.warning(request, 'Недоступный товар удалён из корзины.')

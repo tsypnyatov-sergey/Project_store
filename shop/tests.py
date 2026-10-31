@@ -108,3 +108,24 @@ class CartTests(TestCase):
     def test_sessions_are_independent(self):
         self.client.post(self.add_url, {'quantity': 1})
         self.assertContains(Client().get(self.cart_url), 'Корзина пуста.')
+
+    def test_cart_loads_multiple_products_in_one_query(self):
+        from django.contrib.auth.models import AnonymousUser
+        from django.contrib.messages.storage.fallback import FallbackStorage
+        from django.test import RequestFactory
+        from shop.views import cart_detail
+
+        second = Product.objects.create(name='Second', category=self.product.category,
+                                        price='0.20', stock=3)
+        hidden = Product.objects.create(name='Hidden', category=self.product.category,
+                                        price=1, stock=5, is_active=False)
+        request = RequestFactory().get(self.cart_url)
+        request.user = AnonymousUser()
+        request.session = {'cart': {str(self.product.pk): 2, str(second.pk): 4,
+                                    str(hidden.pk): 1}}
+        request._messages = FallbackStorage(request)
+        with self.assertNumQueries(1):
+            response = cart_detail(request)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(request.session['cart'], {str(self.product.pk): 2, str(second.pk): 3})
+        self.assertContains(response, '$0,80')
